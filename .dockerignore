@@ -1,0 +1,6 @@
+# Arquivos e diretórios a serem ignorados durante a construção do contêiner Docker
+
+# Ignora o diretório de compilação
+build/
+scripts/
+.vscode/
