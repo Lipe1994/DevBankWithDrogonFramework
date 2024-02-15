@@ -42,7 +42,7 @@ RUN mkdir build && \
         make
 
 # Exponha a porta em que o aplicativo Drogon será executado
-EXPOSE 9999
+EXPOSE 8080
 
 # Inicie o seu aplicativo Drogon
 WORKDIR /app/dev_bank_with_drogon_framework/build/

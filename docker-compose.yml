@@ -3,7 +3,7 @@ version: '3.8'
 services:
   pg_database:
     container_name: pg_database
-    image: postgres:latest
+    image: postgres:16.1-alpine3.19
     volumes:
       - ./_scripts/configure.sql:/docker-entrypoint-initdb.d/configure.sql   # Monta um volume com os scripts SQL
     environment:
@@ -16,34 +16,30 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.30"
-          memory: "180MB"
+          cpus: "0.45"
+          memory: "300MB"
 
   dev_bank_api_1:
     container_name: dev_bank_api_1
     image: dev_bank_with_drogon_framework:latest
-    ports:
-      - "8080:8080"
     depends_on:
       - pg_database
     deploy:
       resources:
         limits:
           cpus: "0.50"
-          memory: "180MB"
+          memory: "100MB"
 
   dev_bank_api_2:
     container_name: dev_bank_api_2
     image: dev_bank_with_drogon_framework:latest
-    ports:
-      - "8081:8080"
     depends_on:
       - pg_database
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: "180MB"
+          cpus: "0.45"
+          memory: "100MB"
 
 
   nginx:
@@ -55,13 +51,9 @@ services:
       - ./_nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - dev_bank_api_1
+      - dev_bank_api_2
     deploy:
       resources:
         limits:
-          cpus: "0.20"
-          memory: "10MB"
-
-networks:
-  default:
-    driver: bridge
-    name: devbank_notwork
+          cpus: "0.10"
+          memory: "50MB"

@@ -1,4 +1,5 @@
 #ifndef CUSTOMER_SERVICE_CC
+#include "exceptions/BusinessException.cc"
 #define CUSTOMER_SERVICE_CC
 #endif 
 
@@ -12,15 +13,18 @@
 #define CREDITO 0
 #define DEBITO 1
 
-short CustomerService::charToTypeShort(char typeChar) {
+short CustomerService::charToTypeShort(char typeChar, std::function<void(BusinessException&)> callbackError) {
     char lowerCaseTypeChar = std::tolower(typeChar);
 
     if (lowerCaseTypeChar == 'c')
         return CREDITO;
     else if (lowerCaseTypeChar == 'd')
         return DEBITO;
-    else
-        throw std::invalid_argument("Tipo de transação inválido");
+    else{
+        auto b = BusinessException("Tipo de transação inválido");
+        callbackError(b);
+        return -1;
+    }
 }
 
 char CustomerService::shortToTypeChar(short type) {
@@ -28,68 +32,12 @@ char CustomerService::shortToTypeChar(short type) {
         return 'c';
     else if (type == DEBITO)
         return 'd';
-    else
-        throw std::invalid_argument("Tipo de transação inválido");
+    else{
+        return ' ';
+    }
 }
 
-
-void CustomerService::get(short customerId, std::function<void(std::optional<Customer>&)> callback)
-{
-    auto clientPtr = drogon::app().getDbClient();
-
-    clientPtr->execSqlAsync(
-        "select id, \"limit\", balance, to_char(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') created_at from public.customers where id = $1",
-        [callback](const drogon::orm::Result &result) {
-            
-            if(result.size() == 0)
-            {
-                std::optional<Customer> optionalCustomer;
-                callback(optionalCustomer);
-            }
-
-            Customer customer;
-
-
-            customer.id = result[0]["id"].as<int>();
-            customer.limit = result[0]["limit"].as<int>();
-            customer.balance = result[0]["balance"].as<int>();
-            customer.createdAt = result[0]["created_at"].as<std::string>();
-
-            std::optional<Customer> optionalCustomer(customer);
-            callback(optionalCustomer);
-        },
-        [](const drogon::orm::DrogonDbException &e) {
-            throw std::invalid_argument("Erro ao buscar cliente");
-        },
-        customerId);
-}
-
-void CustomerService::getAll(std::function<void(std::vector<Customer>&)> callback)
-{
-    auto clientPtr = drogon::app().getDbClient();
-
-    clientPtr->execSqlAsync("select id, \"limit\", balance, to_char(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') created_at from public.customers",
-        [callback](const drogon::orm::Result &result) {
-
-            std::vector<Customer> customers;
-
-            for (auto row : result) {
-                customers.push_back({
-                    row["id"].as<int>(),
-                    row["limit"].as<int>(),
-                    row["balance"].as<int>(),
-                    row["created_at"].as<std::string>(),
-                });
-            }
-
-            callback(customers);
-        },
-        [](const drogon::orm::DrogonDbException &e) {
-            throw std::invalid_argument("Erro ao buscar clientes");
-        });
-}
-
-void CustomerService::getExtract(short customerId, std::function<void(std::optional<Customer>&)> callback)
+void CustomerService::getExtract(short customerId, std::function<void(std::optional<Customer>&)> callback, std::function<void(BusinessException&)> callbackError)
 {
     auto clientPtr = drogon::app().getDbClient();
 
@@ -100,15 +48,13 @@ void CustomerService::getExtract(short customerId, std::function<void(std::optio
 "WHERE c.id = $1 "
 "ORDER BY t.id DESC "
 "LIMIT 10",
-    [callback](const drogon::orm::Result &result) {
+    [callback, callbackError](const drogon::orm::Result &result) {
         if(result.size() == 0)
         {
-            std::optional<Customer> emptyCustomer;
-            callback(emptyCustomer);
+            auto error = BusinessException("Cliente não encontrado");
+            callbackError(error);
             return;
         }
-
-        std::cout << result.size() << " rows selected!" << std::endl;
         
         Customer customer;
 
@@ -130,55 +76,66 @@ void CustomerService::getExtract(short customerId, std::function<void(std::optio
         std::optional<Customer> optionalCustomer(customer);
         callback(optionalCustomer);
     },
-    [](const drogon::orm::DrogonDbException &e) {
-        throw std::invalid_argument("Erro ao buscar extrato");
+    [callback](const drogon::orm::DrogonDbException &e) {
+            std::optional<Customer> emptyCustomer;
+            callback(emptyCustomer);
+            return;
     },
     customerId);
 }
 
-void CustomerService::addTransaction(short customerId, int amount, char type, std::string description, std::function<void(std::optional<TransactionResume>&)> callback)
+void CustomerService::addTransaction(
+    short customerId, 
+    int amount, 
+    char type, 
+    std::string description, 
+    std::function<void(std::optional<TransactionResume>&)> callback,
+    std::function<void(BusinessException&)> callbackError)
 {
-    auto transactionType = CustomerService::charToTypeShort(type);
+    auto transactionType = CustomerService::charToTypeShort(type, callbackError);
+
+    auto clientPtr = drogon::app().getDbClient();
+    auto transPtr = clientPtr->newTransaction();
 
     auto amountPtr = std::make_shared<int>(abs(amount));
-    CustomerService::get(customerId, [customerId, amountPtr, transactionType, description, callback](std::optional<Customer>& customer) {
-        if(customer.has_value() == false)
-        {
-            std::optional<TransactionResume> emptyCustomer;
-            callback(emptyCustomer);
-            return;
-        }
+
+    transPtr->execSqlAsync(
+        "select id, \"limit\", balance, to_char(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') created_at from public.customers where id = $1",
+        [transPtr, customerId, amountPtr, transactionType, description, callback, callbackError](const drogon::orm::Result &result) {
+
+        Customer customer;
+        customer.id = result[0]["id"].as<int>();
+        customer.limit = result[0]["limit"].as<int>();
+        customer.balance = result[0]["balance"].as<int>();
+        customer.createdAt = result[0]["created_at"].as<std::string>();
 
         int amount = *amountPtr;
 
         if(transactionType == DEBITO)
         {
-            if( abs(customer->balance - amount) > abs(customer->limit))
+            if( abs(customer.balance - amount) > abs(customer.limit))
             {
-                throw std::invalid_argument("Saldo insuficiente");
+                auto b = BusinessException("saldo insuficiente");
+                callbackError(b);
+                return;
             }
 
-            customer->balance -= abs(amount);
+            customer.balance -= abs(amount);
+        }else if(transactionType == CREDITO){
+            customer.balance += abs(amount);
         }else{
-            customer->balance += abs(amount);
+            auto b = BusinessException("Tipo de transação inválido");
+            callbackError(b);
+            return;
         }
-
-        auto clientPtr = drogon::app().getDbClient();
-        auto transPtr = clientPtr->newTransaction();
 
         transPtr->execSqlAsync(
             "INSERT INTO public.transactions (customer_id, amount, description, type, created_at) VALUES ($1, $2, $3, $4, NOW())",
-            [transPtr, customerId, amount, callback](const drogon::orm::Result &result) {
+            [transPtr, customerId, customer, amount, callback, callbackError](const drogon::orm::Result &result) {
                 
-                transPtr->execSqlAsync("UPDATE public.customers SET balance = balance + $1 WHERE id = $2 RETURNING id, balance, \"limit\"",
-                    [transPtr, callback](const drogon::orm::Result &result) {
+                transPtr->execSqlAsync("UPDATE public.customers SET balance = $1 WHERE id = $2 RETURNING id, balance, \"limit\"",
+                    [transPtr, callback, callbackError](const drogon::orm::Result &result) {
                         
-                        if(result.size() == 0)
-                        {
-                            throw std::invalid_argument("Erro ao atualizar saldo");
-                            return;
-                        }
-
                         TransactionResume resume;
                         resume.balance= result[0]["balance"].as<int>();
                         resume.limit = result[0]["limit"].as<int>();
@@ -186,14 +143,25 @@ void CustomerService::addTransaction(short customerId, int amount, char type, st
                         std::optional<TransactionResume> optionalResume(resume);
                         callback(optionalResume);
                     },
-                    [](const drogon::orm::DrogonDbException &e) {},
-                    amount, customerId);
+                    [callbackError](const drogon::orm::DrogonDbException &e) {
+                        auto b = BusinessException(e.base().what());
+                        callbackError(b);
+                        return;
+                    },
+                    customer.balance, customerId);
 
             },
-            [](const drogon::orm::DrogonDbException &e) {
-                throw std::invalid_argument(e.base().what());
+            [callbackError](const drogon::orm::DrogonDbException &e) {
+                auto b = BusinessException(e.base().what());
+                callbackError(b);
+                return;
             },
             customerId, abs(amount), description.substr(0,10), transactionType);
-
-    });
+    },
+    [callbackError](const drogon::orm::DrogonDbException &e) {
+                auto b = BusinessException(e.base().what());
+                callbackError(b);
+                return;
+    },
+    customerId);
 }
