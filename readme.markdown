@@ -1,19 +1,18 @@
 ### Submissão para Rinha de Backend, Segunda Edição: 2024/Q1 - Controle de Concorrência
 
-### DevBak - Api Rest construída com Drogon Framework 
-
-#### Este projeto usa C++17
-![Imagem que representa o Drogon](./drogon_img.jpeg)
-
 ##### Stack
     - Drogon framework
     - Postgres
     - Nginx
+![Imagem que representa o Drogon](./drogon_img.jpeg)
+
+
 
 ##### Filipe Ferreira
-[@filipe-ferreira-425380123](https://www.linkedin.com/in/filipe-ferreira-425380123/) - Linkedin
-[@l1peferreira](https://www.instagram.com/l1peferreira/) - Instagram
 
+[@filipe-ferreira-425380123](https://www.linkedin.com/in/filipe-ferreira-425380123/) - Linkedin
+
+[@l1peferreira](https://www.instagram.com/l1peferreira/) - Instagram
 
 
 
