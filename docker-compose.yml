@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   drogon_pg_database:
@@ -42,7 +42,6 @@ services:
           cpus: "0.45"
           memory: "120MB"
 
-
   drogon_nginx:
     container_name: drogon_nginx
     image: nginx:latest
@@ -58,3 +57,8 @@ services:
         limits:
           cpus: "0.20"
           memory: "10MB"
+
+networks:
+  default:
+    driver: bridge
+    name: rinha-backend-2024
