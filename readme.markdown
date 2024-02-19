@@ -1,7 +1,23 @@
-# DevBak construído com Drogon Framework 
+### Submissão para Rinha de Backend, Segunda Edição: 2024/Q1 - Controle de Concorrência
 
-### Este projeto usa C++17
+### DevBak - Api Rest construída com Drogon Framework 
+
+#### Este projeto usa C++17
 ![Imagem que representa o Drogon](./drogon_img.jpeg)
+
+##### Stack
+    - Drogon framework
+    - Postgres
+    - Nginx
+
+##### Filipe Ferreira
+[@filipe-ferreira-425380123](https://www.linkedin.com/in/filipe-ferreira-425380123/) - Linkedin
+[@l1peferreira](https://www.instagram.com/l1peferreira/) - Instagram
+
+
+
+
+###### Detalhes de execução e montagem do projeto
 
 Se não existir o diretório build, será necessário criá-lo
 ```shell
