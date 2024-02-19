@@ -8,13 +8,13 @@
             "user": "postgres",
             "passwd": "123456",
             "is_fast": false,
-            "number_of_connections": 15,
+            "number_of_connections": 5,
             "timeout": -1,
             "auto_batch": false
         }
     ],
     "app": {
-        "number_of_threads": 6,
+        "number_of_threads": 4,
         "enable_session": false,
         "session_timeout": 0,
         "session_same_site" : "Null",
@@ -53,8 +53,8 @@
                 "filters": []
             }
         ],
-        "max_connections": 250,
-        "max_connections_per_ip": 250,
+        "max_connections": 200,
+        "max_connections_per_ip": 200,
         "load_dynamic_views": false,
         "dynamic_views_path": [
             "./views"
@@ -69,9 +69,9 @@
         "log": {
             "use_spdlog": false,
             "logfile_base_name": "",
-            "log_size_limit": 100000000,
+            "log_size_limit": 100000,
             "max_files": 0,
-            "log_level": "DEBUG",
+            "log_level": "ERROR",
             "display_local_time": false
         },
         "run_as_daemon": false,
@@ -85,7 +85,7 @@
         "server_header_field": "",
         "enable_server_header": false,
         "enable_date_header": false,
-        "keepalive_requests": 250,
+        "keepalive_requests": 200,
         "pipelining_requests": 0,
         "gzip_static": false,
         "br_static": false,
@@ -96,19 +96,7 @@
         "enabled_compressed_request": false
     },
     "plugins": [
-        {
-            "name": "drogon::plugin::AccessLogger",
-            "dependencies": [],
-            "config": {
-                    "use_spdlog": false,
-                    "log_path": "",
-                    "log_format": "",
-                    "log_file": "access.log",
-                    "log_size_limit": 0,
-                    "use_local_time": true,
-                    "log_index": 0
-            }
-        }
+
     ],
     "custom_config": {}
 }
