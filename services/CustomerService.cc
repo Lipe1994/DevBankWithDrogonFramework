@@ -133,10 +133,9 @@ void CustomerService::debit(
 
             transPtr->execSqlAsync(
             "INSERT INTO public.transactions (customer_id, amount, description, type, created_at) VALUES ($1, $2, $3, $4, NOW())",
-            [&resume, callback](const drogon::orm::Result &result) {
-                
+            [transPtr, &resume, callback](const drogon::orm::Result &result) {
                 callback(resume);
-            
+                return;
             },
             [transPtr, callbackError](const drogon::orm::DrogonDbException &e) {
                 transPtr->rollback();
