@@ -2,6 +2,7 @@
 ![Imagem que representa o Drogon](./drogon_img.jpeg)
 
 ##### Stack:
+    - C++17
     - Drogon framework
     - Postgres
     - Nginx
