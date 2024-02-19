@@ -2,7 +2,7 @@
     "db_clients": [
         {
             "rdbms": "postgresql",
-            "host": "pg_database",
+            "host": "drogon_pg_database",
             "port": 5432,
             "dbname": "postgres",
             "user": "postgres",
@@ -85,7 +85,7 @@
         "server_header_field": "",
         "enable_server_header": false,
         "enable_date_header": false,
-        "keepalive_requests": 250,
+        "keepalive_requests": 200,
         "pipelining_requests": 0,
         "gzip_static": false,
         "br_static": false,
@@ -96,13 +96,6 @@
         "enabled_compressed_request": false
     },
     "plugins": [
-        {
-            "name": "drogon::plugin::PromExporter",
-            "dependencies": [],
-            "config": {
-                "path": "/metrics"
-            }
-        },
         {
             "name": "drogon::plugin::AccessLogger",
             "dependencies": [],

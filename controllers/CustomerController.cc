@@ -103,12 +103,12 @@ void CustomerController::addTransaction(const drogon::HttpRequestPtr &req, std::
     }
 
     
-    customerService.addTransaction(customerId, int(amountF), type, description, [callback](std::optional<TransactionResume>& transactionResume) {
+    customerService.addTransaction(customerId, int(amountF), type, description, [callback](TransactionResume& transactionResume) {
 
         Json::Value resume;
 
-        resume["limite"] = transactionResume.value().limit;
-        resume["saldo"] = transactionResume.value().balance;
+        resume["limite"] = transactionResume.limit;
+        resume["saldo"] = transactionResume.balance;
         auto resp = HttpResponse::newHttpJsonResponse(resume);
         resp->setStatusCode(k200OK);
         callback(resp);

@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  pg_database:
-    container_name: pg_database
+  drogon_pg_database:
+    container_name: drogon_pg_database
     image: postgres:16.1-alpine3.19
     volumes:
       - ./_scripts/configure.sql:/docker-entrypoint-initdb.d/configure.sql   # Monta um volume com os scripts SQL
@@ -19,22 +19,23 @@ services:
           cpus: "0.45"
           memory: "300MB"
 
-  dev_bank_api_1:
-    container_name: dev_bank_api_1
-    image: dev_bank_with_drogon_framework:latest
+  drogon_api_1:
+    container_name: drogon_api_1
+    image: lipeferreira1609/dev_bank_with_drogon_framework:latest
     depends_on:
-      - pg_database
+      - drogon_pg_database
     deploy:
       resources:
         limits:
           cpus: "0.50"
           memory: "100MB"
 
-  dev_bank_api_2:
-    container_name: dev_bank_api_2
-    image: dev_bank_with_drogon_framework:latest
+  drogon_api_2:
+    container_name: drogon_api_2
+    image: lipeferreira1609/dev_bank_with_drogon_framework:latest
     depends_on:
-      - pg_database
+      - drogon_pg_database
+      - drogon_api_1
     deploy:
       resources:
         limits:
@@ -42,16 +43,16 @@ services:
           memory: "100MB"
 
 
-  nginx:
-    container_name: nginx
+  drogon_nginx:
+    container_name: drogon_nginx
     image: nginx:latest
     ports:
       - "9999:9999"
     volumes:
       - ./_nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      - dev_bank_api_1
-      - dev_bank_api_2
+      - drogon_api_1
+      - drogon_api_2
     deploy:
       resources:
         limits:

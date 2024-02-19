@@ -1,10 +1,31 @@
-README EM  CONSTRUCAO 
+Este projeto usa C++17
 
+Se não existir o diretório build, será necessário criá-lo
+```shell
+mkdir build
+```
 
-build docker 
-docker build -t dev_bank_with_drogon_framework:latest . 
+Compilar
+```shell
+cmake .. && make
+```
 
-docker run -p5432:5432 --name pg_database --network docker_local_network  -e POSTGRES_PASSWORD=123456 -d postgres
-docker run -p5432:5432 --name pg_database --network docker_local_network  -e POSTGRES_PASSWORD=123456 -d postgres
-docker-compose down --volumes
-docker-compose up  
+Executar o projeto
+```shell
+./DevBankWithDrogonFramework
+```
+
+Dockerizar o projeto(O Dockerfile já está configurado para compilar dentro do container durante o build da imagem):
+```shell
+docker build -t lipeferreira1609/dev_bank_with_drogon_framework:latest .
+```
+
+Montar um volume com docker-compose:
+```shell
+docker-compose up -d
+```
+
+Desmontar um volume com docker-compose:
+```shell
+docker-compose down
+```

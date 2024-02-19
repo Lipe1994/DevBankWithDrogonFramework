@@ -84,12 +84,13 @@ void CustomerService::getExtract(short customerId, std::function<void(std::optio
     customerId);
 }
 
+
 void CustomerService::addTransaction(
     short customerId, 
     int amount, 
     char type, 
     std::string description, 
-    std::function<void(std::optional<TransactionResume>&)> callback,
+    std::function<void(TransactionResume&)> callback,
     std::function<void(BusinessException&)> callbackError)
 {
     auto transactionType = CustomerService::charToTypeShort(type, callbackError);
@@ -100,7 +101,7 @@ void CustomerService::addTransaction(
     auto amountPtr = std::make_shared<int>(abs(amount));
 
     transPtr->execSqlAsync(
-        "select id, \"limit\", balance, to_char(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') created_at from public.customers where id = $1",
+        "select id, version, \"limit\", balance, to_char(created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') created_at from public.customers where id = $1",
         [transPtr, customerId, amountPtr, transactionType, description, callback, callbackError](const drogon::orm::Result &result) {
 
         Customer customer;
@@ -108,6 +109,7 @@ void CustomerService::addTransaction(
         customer.limit = result[0]["limit"].as<int>();
         customer.balance = result[0]["balance"].as<int>();
         customer.createdAt = result[0]["created_at"].as<std::string>();
+        auto version = result[0]["version"].as<int>();
 
         int amount = *amountPtr;
 
@@ -116,6 +118,7 @@ void CustomerService::addTransaction(
             if( abs(customer.balance - amount) > abs(customer.limit))
             {
                 auto b = BusinessException("saldo insuficiente");
+                LOG_DEBUG<<b.what();
                 callbackError(b);
                 return;
             }
@@ -125,43 +128,56 @@ void CustomerService::addTransaction(
             customer.balance += abs(amount);
         }else{
             auto b = BusinessException("Tipo de transação inválido");
+            LOG_DEBUG<<b.what();
             callbackError(b);
             return;
         }
 
-        transPtr->execSqlAsync(
-            "INSERT INTO public.transactions (customer_id, amount, description, type, created_at) VALUES ($1, $2, $3, $4, NOW())",
-            [transPtr, customerId, customer, amount, callback, callbackError](const drogon::orm::Result &result) {
-                
-                transPtr->execSqlAsync("UPDATE public.customers SET balance = $1 WHERE id = $2 RETURNING id, balance, \"limit\"",
-                    [transPtr, callback, callbackError](const drogon::orm::Result &result) {
-                        
-                        TransactionResume resume;
-                        resume.balance= result[0]["balance"].as<int>();
-                        resume.limit = result[0]["limit"].as<int>();
+        transPtr->execSqlAsync("UPDATE public.customers SET balance = $1, version=$4 WHERE id = $2 and version=$3",
+            [transPtr, customerId, customer, amount, description, transactionType, callback, callbackError](const drogon::orm::Result &result) {
 
-                        std::optional<TransactionResume> optionalResume(resume);
-                        callback(optionalResume);
-                    },
-                    [callbackError](const drogon::orm::DrogonDbException &e) {
-                        auto b = BusinessException(e.base().what());
-                        callbackError(b);
-                        return;
-                    },
-                    customer.balance, customerId);
+                if(result.affectedRows() < 1)
+                {
+                    transPtr->rollback();
+                    auto b = BusinessException("conflito de concorrência - Erro ao atualizar saldo do cliente");
+                    LOG_DEBUG<<b.what();
+                    callbackError(b);
+                    return;
+                }
 
+                transPtr->execSqlAsync(
+                "INSERT INTO public.transactions (customer_id, amount, description, type, created_at) VALUES ($1, $2, $3, $4, NOW())",
+                [transPtr, customerId, customer, amount, callback, callbackError](const drogon::orm::Result &result) {
+                    
+                    TransactionResume resume;
+                    resume.balance = customer.balance;
+                    resume.limit = customer.limit;
+                    callback(resume);
+
+                },
+                [transPtr, callbackError](const drogon::orm::DrogonDbException &e) {
+                    transPtr->rollback();
+                    auto b = BusinessException(e.base().what());
+                    LOG_DEBUG<<b.what();
+                    callbackError(b);
+                    return;
+                },
+                customerId, abs(amount), description, transactionType);
             },
-            [callbackError](const drogon::orm::DrogonDbException &e) {
+            [transPtr, callbackError](const drogon::orm::DrogonDbException &e) {
+                transPtr->rollback();
                 auto b = BusinessException(e.base().what());
+                LOG_DEBUG<<b.what();
                 callbackError(b);
                 return;
             },
-            customerId, abs(amount), description.substr(0,10), transactionType);
+        customer.balance, customerId, version, (version+1));
     },
     [callbackError](const drogon::orm::DrogonDbException &e) {
-                auto b = BusinessException(e.base().what());
-                callbackError(b);
-                return;
+        auto b = BusinessException(e.base().what());
+        LOG_DEBUG<<b.what();
+        callbackError(b);
+        return;
     },
     customerId);
 }
