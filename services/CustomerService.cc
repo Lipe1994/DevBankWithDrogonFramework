@@ -184,13 +184,12 @@ void CustomerService::credit(
             resume.balance = result[0]["balance"].as<int>();
             resume.affectedRow = result[0]["affectedRow"].as<bool>();
             
-
             transPtr->execSqlAsync(
             "INSERT INTO public.transactions (customer_id, amount, description, type, created_at) VALUES ($1, $2, $3, $4, NOW())",
             [&resume, callback](const drogon::orm::Result &result) {
                 
                 callback(resume);
-            
+                return;
             },
             [transPtr, callbackError](const drogon::orm::DrogonDbException &e) {
                 transPtr->rollback();
