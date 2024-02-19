@@ -1,4 +1,7 @@
-Este projeto usa C++17
+# DevBak construído com Drogon Framework 
+
+### Este projeto usa C++17
+![Imagem que representa o Drogon](drogon_img.jpeg = x400)
 
 Se não existir o diretório build, será necessário criá-lo
 ```shell
