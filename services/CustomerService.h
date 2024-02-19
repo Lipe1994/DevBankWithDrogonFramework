@@ -23,6 +23,7 @@ struct Customer {
 struct TransactionResume {
     int limit;
     int balance;
+    bool affectedRow;
 };
 
 
@@ -33,4 +34,20 @@ class CustomerService
     void addTransaction(short customerId, int amount, char type, std::string description, std::function<void(TransactionResume&)> callback, std::function<void(BusinessException&)> error);
     static short charToTypeShort(char typeChar, std::function<void(BusinessException&)> callbackError);
     static char shortToTypeChar(short type);
+
+    void debit(
+        short customerId,
+        int amount, 
+        short type, 
+        std::string description,  
+        std::function<void(TransactionResume&)> callback, 
+        std::function<void(BusinessException&)> callbackError);
+
+    void credit(
+        short customerId,
+        int amount, 
+        short type, 
+        std::string description,  
+        std::function<void(TransactionResume&)> callback, 
+        std::function<void(BusinessException&)> callbackError);
 };

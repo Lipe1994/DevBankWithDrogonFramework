@@ -2,7 +2,7 @@
     "db_clients": [
         {
             "rdbms": "postgresql",
-            "host": "drogon_pg_database",
+            "host": "localhost",
             "port": 5432,
             "dbname": "postgres",
             "user": "postgres",
