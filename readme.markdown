@@ -1,12 +1,13 @@
 ### Submissão para Rinha de Backend, Segunda Edição: 2024/Q1 - Controle de Concorrência
+![Imagem que representa o Drogon](./drogon_img.jpeg)
 
 ##### Stack:
     - Drogon framework
     - Postgres
     - Nginx
-![Imagem que representa o Drogon](./drogon_img.jpeg)
 
-
+##### Repositório
+- [Lipe1994/DevBankWithDrogonFramework](https://github.com/Lipe1994/DevBankWithDrogonFramework/)
 
 ##### Filipe Ferreira:
 
