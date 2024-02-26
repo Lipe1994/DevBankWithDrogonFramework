@@ -29,13 +29,14 @@
         
         for (const auto& customer : customer.value().transactions) {
             if(customer.createdAt != "")
-            {      
-                std::string tipo; 
-                tipo.push_back(CustomerService::shortToTypeChar(customer.type));
-
+            {
                 Json::Value transactionJson;
                 transactionJson["valor"] = customer.amount;
-                transactionJson["tipo"] = tipo;
+
+  
+                std::string type(1, customer.type);
+                transactionJson["tipo"] = type;
+
                 transactionJson["descricao"] = customer.description;
                 transactionJson["realizada_em"] = customer.createdAt;
 
@@ -94,7 +95,7 @@ void CustomerController::addTransaction(const drogon::HttpRequestPtr &req, std::
     
     char type = (*json)["tipo"].asString()[0];
     std::string description = (*json)["descricao"].asString();
-    if(description.length() > 10 ||description.length() == 0)
+    if( (description.length() > 10 || description.length() == 0) || (type != 'd' && type != 'c') )
     {
         auto resp = HttpResponse::newHttpResponse();
         resp->setStatusCode(k422UnprocessableEntity);

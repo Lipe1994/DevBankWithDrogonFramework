@@ -10,32 +10,6 @@
 #include <drogon/orm/DbClient.h>
 #include <stdexcept>
 
-#define CREDITO 0
-#define DEBITO 1
-
-short CustomerService::charToTypeShort(char typeChar, std::function<void(BusinessException&)> callbackError) {
-    char lowerCaseTypeChar = std::tolower(typeChar);
-
-    if (lowerCaseTypeChar == 'c')
-        return CREDITO;
-    else if (lowerCaseTypeChar == 'd')
-        return DEBITO;
-    else{
-        auto b = BusinessException("Tipo de transação inválido");
-        callbackError(b);
-        return -1;
-    }
-}
-
-char CustomerService::shortToTypeChar(short type) {
-    if (type == CREDITO)
-        return 'c';
-    else if (type == DEBITO)
-        return 'd';
-    else{
-        return ' ';
-    }
-}
 
 void CustomerService::getExtract(short customerId, std::function<void(std::optional<Customer>&)> callback, std::function<void(BusinessException&)> callbackError)
 {
@@ -67,7 +41,7 @@ void CustomerService::getExtract(short customerId, std::function<void(std::optio
         for (auto row : result) {
             customer.transactions.push_back({
                 row["amount"].as<int>(),
-                row["type"].as<short>(),
+                row["type"].as<char>(),
                 row["description"].as<std::string>(),
                 row["created_at"].as<std::string>(),
             });
@@ -93,19 +67,18 @@ void CustomerService::addTransaction(
     std::function<void(TransactionResume&)> callback,
     std::function<void(BusinessException&)> callbackError)
 {
-    auto transactionType = CustomerService::charToTypeShort(type, callbackError);
 
-    if(transactionType == DEBITO){
-        CustomerService::debit(customerId, amount, transactionType, description, callback, callbackError);
-    }else if(transactionType == CREDITO){
-        CustomerService::credit(customerId, amount, transactionType, description, callback, callbackError);
+    if(type == 'd'){
+        CustomerService::debit(customerId, amount, type, description, callback, callbackError);
+    }else if(type == 'c'){
+        CustomerService::credit(customerId, amount, type, description, callback, callbackError);
     }
 }
 
 void CustomerService::debit(
     short customerId,
     int amount, 
-    short transactionType, 
+    char type, 
     std::string description,  
     std::function<void(TransactionResume&)> callback, 
     std::function<void(BusinessException&)> callbackError){
@@ -114,7 +87,7 @@ void CustomerService::debit(
     auto transPtr = clientPtr->newTransaction();
 
     transPtr->execSqlAsync("WITH Updated as (UPDATE public.customers c SET balance = balance - $1 WHERE id = $2 AND abs(balance - $1) <= c.limit RETURNING c.limit,c.balance) SELECT true affectedRow, \"limit\", balance FROM Updated",
-        [transPtr, customerId, amount, transactionType, description, callback, callbackError](const drogon::orm::Result &result) {
+        [transPtr, customerId, amount, type, description, callback, callbackError](const drogon::orm::Result &result) {
 
             if(result.affectedRows() < 1)
             {
@@ -144,7 +117,7 @@ void CustomerService::debit(
                 callbackError(b);
                 return;
             },
-            customerId, abs(amount), description, transactionType);
+            customerId, abs(amount), description, type);
         },
         [transPtr, callbackError](const drogon::orm::DrogonDbException &e) {
             transPtr->rollback();
@@ -159,7 +132,7 @@ void CustomerService::debit(
 void CustomerService::credit(
     short customerId,
     int amount, 
-    short transactionType, 
+    char type, 
     std::string description,  
     std::function<void(TransactionResume&)> callback, 
     std::function<void(BusinessException&)> callbackError){
@@ -168,7 +141,7 @@ void CustomerService::credit(
     auto transPtr = clientPtr->newTransaction();
 
     transPtr->execSqlAsync("WITH Updated as (UPDATE public.customers SET balance = balance + $1 WHERE id = $2 RETURNING \"limit\", balance) SELECT true affectedRow, \"limit\", balance FROM Updated",
-        [transPtr, customerId, amount, transactionType, description, callback, callbackError](const drogon::orm::Result &result) {
+        [transPtr, customerId, amount, type, description, callback, callbackError](const drogon::orm::Result &result) {
 
             if(result.affectedRows() < 1)
             {
@@ -198,7 +171,7 @@ void CustomerService::credit(
                 callbackError(b);
                 return;
             },
-            customerId, abs(amount), description, transactionType);
+            customerId, abs(amount), description, type);
         },
         [transPtr, callbackError](const drogon::orm::DrogonDbException &e) {
             transPtr->rollback();

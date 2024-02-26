@@ -6,7 +6,7 @@
 
 struct Transaction {
     int amount;
-    short type;
+    char type;
     std::string description;
     std::string createdAt;
 };
@@ -32,13 +32,11 @@ class CustomerService
   public:
     void getExtract(short customerId, std::function<void(std::optional<Customer>&)> callback, std::function<void(BusinessException&)> callbackError);
     void addTransaction(short customerId, int amount, char type, std::string description, std::function<void(TransactionResume&)> callback, std::function<void(BusinessException&)> error);
-    static short charToTypeShort(char typeChar, std::function<void(BusinessException&)> callbackError);
-    static char shortToTypeChar(short type);
 
     void debit(
         short customerId,
         int amount, 
-        short type, 
+        char type, 
         std::string description,  
         std::function<void(TransactionResume&)> callback, 
         std::function<void(BusinessException&)> callbackError);
@@ -46,7 +44,7 @@ class CustomerService
     void credit(
         short customerId,
         int amount, 
-        short type, 
+        char type, 
         std::string description,  
         std::function<void(TransactionResume&)> callback, 
         std::function<void(BusinessException&)> callbackError);
