@@ -8,8 +8,8 @@
             "user": "postgres",
             "passwd": "123456",
             "is_fast": false,
-            "number_of_connections": 5,
-            "timeout": -1,
+            "number_of_connections": 6,
+            "timeout": 2,
             "auto_batch": false
         }
     ],
@@ -80,7 +80,7 @@
         "use_sendfile": false,
         "use_gzip": false,
         "use_brotli": false,
-        "static_files_cache_time": 1,
+        "static_files_cache_time": 0,
         "idle_connection_timeout": 60,
         "server_header_field": "",
         "enable_server_header": false,
