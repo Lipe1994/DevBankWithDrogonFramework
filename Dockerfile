@@ -1,20 +1,20 @@
-# Use a imagem base do Alpine Linux
-FROM alpine:latest
+FROM ubuntu:20.04
 
-RUN apk add --no-cache build-base
+ENV TZ=UTC \ 
+    DEBIAN_FRONTEND=noninteractive
 
-# Atualize os pacotes e instale as dependências necessárias
-RUN apk --no-cache add \
-    cmake \
-    g++ \
+RUN apt-get update && apt-get install -yqq \
     git \
-    jsoncpp-dev \
-    sqlite-dev \
+    gcc \
+    g++ \
+    cmake \
+    libjsoncpp-dev \
+    uuid-dev \
+    zlib1g-dev \
     openssl \
-    openssl-dev \
-    zlib-dev \
-    util-linux-dev \
-    libpq-dev
+    libssl-dev \
+    postgresql-all \
+    doxygen
 
 # Defina o diretório de trabalho para o seu aplicativo
 WORKDIR /app
@@ -26,9 +26,12 @@ RUN git clone https://github.com/drogonframework/drogon && \
 
 
 WORKDIR /app/drogon
+RUN gcc --version
+RUN g++ --version
+RUN ls
 RUN mkdir build && \
         cd build && \
-        cmake .. && \
+        cmake --std=c++17 -lstdc++fs -DCMAKE_BUILD_TYPE=Release .. && \
         make && \
         make install
 
@@ -38,7 +41,7 @@ COPY . /app/dev_bank_with_drogon_framework
 WORKDIR /app/dev_bank_with_drogon_framework
 RUN mkdir build && \
         cd build && \
-        cmake .. && \
+        cmake --std=c++17 -lstdc++fs -DCMAKE_BUILD_TYPE=Release .. && \
         make
 
 # Exponha a porta em que o aplicativo Drogon será executado
