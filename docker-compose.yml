@@ -21,7 +21,7 @@ services:
 
   drogon_api_1:
     container_name: drogon_api_1
-    image: lipeferreira1609/dev_bank_with_drogon_framework:1.15
+    image: lipeferreira1609/dev_bank_with_drogon_framework:latest
     depends_on:
       - drogon_pg_database
     deploy:
@@ -32,7 +32,7 @@ services:
 
   drogon_api_2:
     container_name: drogon_api_2
-    image: lipeferreira1609/dev_bank_with_drogon_framework:1.15
+    image: lipeferreira1609/dev_bank_with_drogon_framework:latest
     depends_on:
       - drogon_pg_database
       - drogon_api_1
