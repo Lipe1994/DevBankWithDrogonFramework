@@ -1,6 +1,6 @@
 SHOW MAX_CONNECTIONS;
 
-ALTER SYSTEM SET max_connections = 400;
+ALTER SYSTEM SET max_connections = 330;
 
 CREATE TABLE public.customers (
 	id smallint NOT NULL,
