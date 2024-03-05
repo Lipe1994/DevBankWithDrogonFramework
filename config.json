@@ -8,13 +8,13 @@
             "user": "postgres",
             "passwd": "123456",
             "is_fast": false,
-            "number_of_connections": 100,
+            "number_of_connections": 65,
             "timeout": 3,
             "auto_batch": false
         }
     ],
     "app": {
-        "number_of_threads": 4,
+        "number_of_threads": 3,
         "enable_session": false,
         "session_timeout": 0,
         "session_same_site" : "Null",
@@ -53,8 +53,8 @@
                 "filters": []
             }
         ],
-        "max_connections": 180,
-        "max_connections_per_ip": 180,
+        "max_connections": 160,
+        "max_connections_per_ip": 160,
         "load_dynamic_views": false,
         "dynamic_views_path": [
             "./views"
@@ -85,8 +85,8 @@
         "server_header_field": "",
         "enable_server_header": false,
         "enable_date_header": false,
-        "keepalive_requests": 180,
-        "pipelining_requests": 2,
+        "keepalive_requests": 160,
+        "pipelining_requests": 0,
         "gzip_static": false,
         "br_static": false,
         "client_max_body_size": "1M",

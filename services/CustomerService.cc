@@ -92,58 +92,33 @@ void CustomerService::debit(
 {
 
     auto clientPtr = drogon::app().getDbClient();
-    auto transPtr = clientPtr->newTransaction();
 
-    transPtr->execSqlAsync(
-        "WITH Updated as (UPDATE public.customers SET balance = balance - $2 WHERE id = $1 AND ( (balance - $2) < 0 AND (abs(balance - $2) <= \"limit\") OR (balance - $2 >= 0) ) RETURNING \"limit\", balance) SELECT true affectedRow, \"limit\", balance FROM Updated",
-        [transPtr, customerId, amount, type, description, callback, callbackError](const drogon::orm::Result &result)
+    clientPtr->execSqlAsync(
+        "select affectedRow, _limit, _balance from debitar($1, $2, $3)",
+        [customerId, amount, type, description, callback, callbackError](const drogon::orm::Result &result)
         {
-            auto affectedRow = result[0]["affectedRow"];
-            if (affectedRow.isNull())
+            auto affectedRow = result[0]["affectedRow"].as<bool>();
+            if (!affectedRow)
             {
-                transPtr->rollback();
                 auto b = BusinessException(ECC);
-                // LOG_DEBUG << b.what();
+                LOG_DEBUG << b.what();
                 callbackError(b);
                 return;
             }
 
-            transPtr->setCommitCallback([result, callback, callbackError](bool success)
-                                        {
-                if (success) {
-                    TransactionResume resume;
-                    resume.limit = result[0]["limit"].as<int>();
-                    resume.balance = result[0]["balance"].as<int>();
+            TransactionResume resume;
+            resume.limit = result[0]["_limit"].as<int>();
+            resume.balance = result[0]["_balance"].as<int>();
 
-                    callback(resume);
-                } else {
-                    auto b = BusinessException(ECTC);
-                    //LOG_DEBUG<<b.what();
-                    callbackError(b);
-                } });
-
-            transPtr->execSqlAsync(
-                "INSERT INTO public.transactions (customer_id, amount, description, type, created_at) VALUES ($1, $2, $3, $4, NOW())",
-                [](const drogon::orm::Result &result) {
-
-                },
-                [transPtr, callbackError](const drogon::orm::DrogonDbException &e)
-                {
-                    transPtr->rollback();
-                    auto b = BusinessException(ECTC);
-                    // LOG_DEBUG << b.what();
-                    callbackError(b);
-                },
-                customerId, abs(amount), description, type);
+            callback(resume);
         },
-        [transPtr, callbackError](const drogon::orm::DrogonDbException &e)
+        [callbackError](const drogon::orm::DrogonDbException &e)
         {
-            transPtr->rollback();
             auto b = BusinessException(ECTC);
             // LOG_DEBUG << b.what();
             callbackError(b);
         },
-        customerId, amount);
+        customerId, amount, description);
 }
 
 void CustomerService::credit(
@@ -156,54 +131,30 @@ void CustomerService::credit(
 {
 
     auto clientPtr = drogon::app().getDbClient();
-    auto transPtr = clientPtr->newTransaction();
 
-    transPtr->execSqlAsync(
-        "WITH Updated as (UPDATE public.customers SET balance = balance + $2 WHERE id = $1 RETURNING \"limit\", balance) SELECT true affectedRow, \"limit\", balance FROM Updated",
-        [transPtr, customerId, amount, type, description, callback, callbackError](const drogon::orm::Result &result)
+    clientPtr->execSqlAsync(
+        "select affectedRow, _limit, _balance from creditar($1, $2, $3)",
+        [customerId, amount, type, description, callback, callbackError](const drogon::orm::Result &result)
         {
-            auto affectedRow = result[0]["affectedRow"];
-            if (affectedRow.isNull())
+            auto affectedRow = result[0]["affectedRow"].as<bool>();
+
+            if (!affectedRow)
             {
-                transPtr->rollback();
                 auto b = BusinessException(ECC);
-                // LOG_DEBUG << b.what();
+                LOG_DEBUG << b.what();
                 callbackError(b);
             }
 
-            transPtr->setCommitCallback([result, callback, callbackError](bool success)
-                                        {
-                if (success) {
-                    TransactionResume resume;
-                    resume.limit = result[0]["limit"].as<int>();
-                    resume.balance = result[0]["balance"].as<int>();
-                    callback(resume);
-                } else {
-                    auto b = BusinessException(ECTC);
-                    //LOG_DEBUG<<b.what();
-                    callbackError(b);
-                } });
-
-            transPtr->execSqlAsync(
-                "INSERT INTO public.transactions (customer_id, amount, description, type, created_at) VALUES ($1, $2, $3, $4, NOW())",
-                [](const drogon::orm::Result &result) {
-
-                },
-                [transPtr, callbackError](const drogon::orm::DrogonDbException &e)
-                {
-                    transPtr->rollback();
-                    auto b = BusinessException(ECTC);
-                    // LOG_DEBUG << b.what();
-                    callbackError(b);
-                },
-                customerId, abs(amount), description, type);
+            TransactionResume resume;
+            resume.limit = result[0]["_limit"].as<int>();
+            resume.balance = result[0]["_balance"].as<int>();
+            callback(resume);
         },
-        [transPtr, callbackError](const drogon::orm::DrogonDbException &e)
+        [callbackError](const drogon::orm::DrogonDbException &e)
         {
-            transPtr->rollback();
             auto b = BusinessException(ECTC);
             // LOG_DEBUG << b.what();
             callbackError(b);
         },
-        customerId, amount);
+        customerId, amount, description);
 }
