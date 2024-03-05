@@ -1,24 +1,24 @@
 #ifndef CUSTOMER_CONTROLLER_CC
 #define CUSTOMER_CONTROLLER_CC
-    #include <ctime>
-    #include "utils/time.cc"
-    #include <vector>
-#endif 
+#include <vector>
+#endif
 #include "CustomerController.h"
 #include "services/CustomerService.cc"
 
-    void CustomerController::getExtract(const HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback, short customerId) const
+void CustomerController::getExtract(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, short customerId) const
+{
+    if (customerId > 5 || customerId < 1)
     {
-        if(customerId > 5 || customerId < 1)
-        {
-            auto resp = HttpResponse::newHttpResponse();
-            resp->setStatusCode(k404NotFound);
-            callback(resp);
-            return;
-        }
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setStatusCode(k404NotFound);
+        callback(resp);
+        return;
+    }
 
-        CustomerService customerService;
-        customerService.getExtract(customerId, [callback](std::optional<Customer> customer){
+    CustomerService customerService;
+    customerService.getExtract(
+        customerId, [callback](std::optional<Customer> customer)
+        {
 
         Json::Value customerJson;
 
@@ -46,19 +46,18 @@
 
         auto resp = HttpResponse::newHttpJsonResponse(customerJson);
         resp->setStatusCode(k200OK);
-        callback(resp);
-    }, [callback](BusinessException& e) {
-
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setStatusCode(k422UnprocessableEntity);
-        callback(resp);
-    });
-
+        callback(resp); },
+        [callback](BusinessException &e)
+        {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setStatusCode(k422UnprocessableEntity);
+            callback(resp);
+        });
 }
 
-void CustomerController::addTransaction(const drogon::HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback, short customerId)const
+void CustomerController::addTransaction(const drogon::HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, short customerId) const
 {
-    if(customerId > 5 || customerId < 1)
+    if (customerId > 5 || customerId < 1)
     {
         auto resp = HttpResponse::newHttpResponse();
         resp->setStatusCode(k404NotFound);
@@ -70,14 +69,14 @@ void CustomerController::addTransaction(const drogon::HttpRequestPtr &req, std::
 
     auto json(req->getJsonObject());
 
-    if(json == nullptr)
+    if (json == nullptr)
     {
         return;
     }
 
     double amountF = (*json)["valor"].asDouble();
 
-    if(amountF - int(amountF) != 0)
+    if (amountF - int(amountF) != 0)
     {
         auto resp = HttpResponse::newHttpResponse();
         resp->setStatusCode(k422UnprocessableEntity);
@@ -85,17 +84,17 @@ void CustomerController::addTransaction(const drogon::HttpRequestPtr &req, std::
         return;
     }
 
-    if((*json)["descricao"] == Json::nullValue)
+    if ((*json)["descricao"] == Json::nullValue)
     {
         auto resp = HttpResponse::newHttpResponse();
         resp->setStatusCode(k422UnprocessableEntity);
         callback(resp);
         return;
     }
-    
+
     char type = (*json)["tipo"].asString()[0];
     std::string description = (*json)["descricao"].asString();
-    if( (description.length() > 10 || description.length() == 0) || (type != 'd' && type != 'c') )
+    if ((description.length() > 10 || description.length() == 0) || (type != 'd' && type != 'c'))
     {
         auto resp = HttpResponse::newHttpResponse();
         resp->setStatusCode(k422UnprocessableEntity);
@@ -103,8 +102,9 @@ void CustomerController::addTransaction(const drogon::HttpRequestPtr &req, std::
         return;
     }
 
-    
-    customerService.addTransaction(customerId, int(amountF), type, description, [callback](TransactionResume& transactionResume) {
+    customerService.addTransaction(
+        customerId, int(amountF), type, description, [callback](TransactionResume &transactionResume)
+        {
 
         Json::Value resume;
 
@@ -112,10 +112,11 @@ void CustomerController::addTransaction(const drogon::HttpRequestPtr &req, std::
         resume["saldo"] = transactionResume.balance;
         auto resp = HttpResponse::newHttpJsonResponse(resume);
         resp->setStatusCode(k200OK);
-        callback(resp);
-    }, [callback](BusinessException& e) {
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setStatusCode(k422UnprocessableEntity);
-        callback(resp);
-    });
+        callback(resp); },
+        [callback](BusinessException &e)
+        {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setStatusCode(k422UnprocessableEntity);
+            callback(resp);
+        });
 }
