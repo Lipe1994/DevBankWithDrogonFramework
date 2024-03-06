@@ -8,13 +8,13 @@
             "user": "postgres",
             "passwd": "123456",
             "is_fast": false,
-            "number_of_connections": 65,
+            "number_of_connections": 45,
             "timeout": 3,
             "auto_batch": false
         }
     ],
     "app": {
-        "number_of_threads": 3,
+        "number_of_threads": 4,
         "enable_session": false,
         "session_timeout": 0,
         "session_same_site" : "Null",
