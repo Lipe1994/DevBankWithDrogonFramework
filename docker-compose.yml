@@ -6,7 +6,7 @@ services:
     image: postgres:15.4
     volumes:
       - ./configure.sql:/docker-entrypoint-initdb.d/configure.sql
-    command: "postgres -c shared_buffers=256MB -c fsync=off -c full_page_writes=off -c max_connections=200"
+    command: "postgres -c shared_buffers=256MB -c fsync=off -c full_page_writes=off -c max_connections=160"
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_PASSWORD=123456
@@ -16,12 +16,12 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.40"
-          memory: "380MB"
+          cpus: "0.45"
+          memory: "390MB"
 
   drogon_api_1:
     container_name: drogon_api_1
-    image: lipeferreira1609/dev_bank_with_drogon_framework:2.70
+    image: lipeferreira1609/dev_bank_with_drogon_framework:2.80
     depends_on:
       - drogon_pg_database
     deploy:
@@ -32,7 +32,7 @@ services:
 
   drogon_api_2:
     container_name: drogon_api_2
-    image: lipeferreira1609/dev_bank_with_drogon_framework:2.70
+    image: lipeferreira1609/dev_bank_with_drogon_framework:2.80
     depends_on:
       - drogon_pg_database
       - drogon_api_1
@@ -55,8 +55,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.40"
-          memory: "90MB"
+          cpus: "0.35"
+          memory: "80MB"
 
 networks:
   default:
